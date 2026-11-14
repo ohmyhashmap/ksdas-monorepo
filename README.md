@@ -121,16 +121,3 @@ Sesuai Panduan Proyek Kolaborasi, penggunaan *tools* pihak ketiga dan AI dicantu
 * [x] Setup Docker (PostgreSQL, Redis, MinIO)
 * [x] Skema Database Modul A (Auth, RBAC, Organisasi, Notifikasi, Audit)
 * [x] Backend Modul A: Login, Register, RBAC, Manajemen Akun, Audit Log, Struktur Organisasi, Komentar & Notifikasi.
-
----
-
-### Langkah Commit & Push ke GitHub
-
-Setelah file `README.md` disimpan, jalankan perintah ini di terminal Git Bash (di folder root `ksdas-monorepo`):
-
-```bash
-git add README.md
-git commit -m "docs: merapikan struktur dan format README.md monorepo"
-git push origin main
-
-```
