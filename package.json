@@ -1,6 +1,7 @@
 {
   "name": "ksdas-monorepo",
   "version": "1.0.0",
+  "packageManager": "pnpm@12.18.0",
   "description": "",
   "main": "index.js",
   "scripts": {
