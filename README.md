@@ -80,14 +80,14 @@ cd ksdas-monorepo
 
 ```
 
-1. **Install Dependensi**
+2. **Install Dependensi**
 
 ```bash
 pnpm install
 
 ```
 
-1. **Nyalakan Database & Storage**
+3. **Nyalakan Database & Storage**
 Pastikan Docker Desktop menyala, lalu jalankan:
 
 ```bash
@@ -95,7 +95,7 @@ docker compose up -d
 
 ```
 
-1. **Jalankan Backend**
+4. **Jalankan Backend**
 
 ```bash
 pnpm --filter backend start:dev
