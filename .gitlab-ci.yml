@@ -7,7 +7,6 @@ stages:
 
 # ------------------------------------------------------------
 # GitLab SAST (Static Application Security Testing)
-# Memindai celah keamanan bawaan GitLab (Sangat ringan, tanpa server tambahan)
 # ------------------------------------------------------------
 include:
   - template: Security/SAST.gitlab-ci.yml
@@ -72,7 +71,6 @@ lint:
   needs: [install]
   script:
     - pnpm install --frozen-lockfile
-    # Menjalankan oxlint dan mengubah output-nya ke format JSON GitLab
     - cd apps/backend && pnpm exec oxlint --format=gitlab > gl-code-quality-report.json || true
   artifacts:
     reports:
@@ -102,3 +100,10 @@ sonarqube-check:
     - if: $SONAR_TOKEN
       when: always
     - when: never
+
+# ------------------------------------------------------------
+# Override untuk GitLab SAST agar tidak menjalankan before_script global
+# (Karena image Semgrep tidak memiliki corepack/Node.js)
+# ------------------------------------------------------------
+semgrep-sast:
+  before_script: []
