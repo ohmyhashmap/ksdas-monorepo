@@ -1,0 +1,23 @@
+{
+  "name": "ksdas-monorepo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ohmyhashmap/ksdas-monorepo.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ohmyhashmap/ksdas-monorepo/issues"
+  },
+  "homepage": "https://github.com/ohmyhashmap/ksdas-monorepo#readme",
+  "devDependencies": {
+    "turbo": "^2.11.11"
+  }
+}
