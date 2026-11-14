@@ -5,6 +5,13 @@ stages:
   - lint
   - sonarqube-check
 
+# ------------------------------------------------------------
+# GitLab SAST (Static Application Security Testing)
+# Memindai celah keamanan bawaan GitLab (Sangat ringan, tanpa server tambahan)
+# ------------------------------------------------------------
+include:
+  - template: Security/SAST.gitlab-ci.yml
+
 default:
   image: node:22-slim
   before_script:
@@ -20,13 +27,12 @@ default:
       - .turbo/
 
 # ------------------------------------------------------------
-# install — Hanya untuk mengisi cache, tidak upload artifacts
+# install
 # ------------------------------------------------------------
 install:
   stage: install
   script:
     - pnpm install --frozen-lockfile
-  # ARTIFACTS DIHAPUS DARI SINI
 
 # ------------------------------------------------------------
 # build
@@ -35,11 +41,11 @@ build:
   stage: build
   needs: [install]
   script:
-    - pnpm install --frozen-lockfile # Sangat cepat karena cache
+    - pnpm install --frozen-lockfile
     - pnpm turbo run build --filter=backend
   artifacts:
     paths:
-      - apps/backend/dist/ # Hanya upload folder dist yang ukurannya kecil
+      - apps/backend/dist/
     expire_in: 1 day
 
 # ------------------------------------------------------------
@@ -50,7 +56,7 @@ test:
   needs: [install]
   script:
     - pnpm install --frozen-lockfile
-    - pnpm turbo run test --filter=backend
+    - pnpm --filter backend test:cov
   allow_failure: true
   artifacts:
     when: always
@@ -59,18 +65,22 @@ test:
     expire_in: 1 week
 
 # ------------------------------------------------------------
-# lint
+# lint (Menggunakan oxlint dengan format Code Quality GitLab)
 # ------------------------------------------------------------
 lint:
   stage: lint
   needs: [install]
   script:
     - pnpm install --frozen-lockfile
-    - pnpm turbo run lint --filter=backend
+    # Menjalankan oxlint dan mengubah output-nya ke format JSON GitLab
+    - cd apps/backend && pnpm exec oxlint --format=gitlab > gl-code-quality-report.json || true
+  artifacts:
+    reports:
+      codequality: apps/backend/gl-code-quality-report.json
   allow_failure: true
 
 # ------------------------------------------------------------
-# sonarqube-check
+# sonarqube-check (Akan otomatis di-skip jika SONAR_TOKEN kosong)
 # ------------------------------------------------------------
 sonarqube-check:
   stage: sonarqube-check
