@@ -164,11 +164,18 @@ deploy:
     - ssh-keyscan -H 192.168.100.42 >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
   script:
-    # 1. Buat file .env sementara dari Variabel GitLab
-    - echo "DATABASE_URL=$DATABASE_URL" > .env
-    - echo "PORT=$PORT" >> .env
-    - echo "JWT_SECRET=$JWT_SECRET" >> .env
-    
+    # 1. Generate file .env otomatis dari GitLab Variables
+    - |
+      cat <<EOF > .env
+      DB_HOST=$DB_HOST
+      DB_PORT=$DB_PORT
+      DB_USER=$DB_USER
+      DB_PASS=$DB_PASS
+      DB_NAME=$DB_NAME
+      JWT_SECRET=$JWT_SECRET
+      JWT_EXPIRES_IN=$JWT_EXPIRES_IN
+      EOF
+      
     # 2. Kirim file backend ke server
     - ssh christian@192.168.100.42 "mkdir -p /var/lib/ksdas-backend/apps/backend"
     - rsync -avz --exclude='node_modules' --exclude='src' --exclude='test' --exclude='.turbo' apps/backend/ christian@192.168.100.42:/var/lib/ksdas-backend/apps/backend/
