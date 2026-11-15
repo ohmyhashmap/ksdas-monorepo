@@ -164,9 +164,20 @@ deploy:
     - ssh-keyscan -H 192.168.100.42 >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
   script:
+    # 1. Buat file .env sementara dari Variabel GitLab
+    - echo "DATABASE_URL=$DATABASE_URL" > .env
+    - echo "PORT=$PORT" >> .env
+    - echo "JWT_SECRET=$JWT_SECRET" >> .env
+    
+    # 2. Kirim file backend ke server
     - ssh christian@192.168.100.42 "mkdir -p /var/lib/ksdas-backend/apps/backend"
     - rsync -avz --exclude='node_modules' --exclude='src' --exclude='test' --exclude='.turbo' apps/backend/ christian@192.168.100.42:/var/lib/ksdas-backend/apps/backend/
     - rsync -avz package.json pnpm-lock.yaml pnpm-workspace.yaml christian@192.168.100.42:/var/lib/ksdas-backend/
+    
+    # 3. Kirim file .env ke server
+    - rsync -avz .env christian@192.168.100.42:/var/lib/ksdas-backend/.env
+    
+    # 4. Install dependensi dan restart service
     - ssh christian@192.168.100.42 "cd /var/lib/ksdas-backend && corepack pnpm install --prod --frozen-lockfile && sudo systemctl restart ksdas-backend"
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
