@@ -24,20 +24,22 @@ default:
       - .turbo/
 
 # ------------------------------------------------------------
-# BUILD
+# BUILD (Backend & Frontend)
 # ------------------------------------------------------------
 build:
   stage: build
   script:
     - pnpm install --frozen-lockfile
-    - pnpm turbo run build --filter=backend
+    # Membangun semua aplikasi di dalam folder apps/
+    - pnpm turbo run build 
   artifacts:
     paths:
       - apps/backend/dist/
+      - apps/frontend/dist/ # <--- Simpan hasil build frontend
     expire_in: 1 day
 
 # ------------------------------------------------------------
-# TEST
+# TEST (Backend)
 # ------------------------------------------------------------
 test:
   stage: test
@@ -55,7 +57,6 @@ test:
 # ------------------------------------------------------------
 # PERFORMANCE TEST (k6)
 # ------------------------------------------------------------
-# 1. Smoke Test: Berjalan otomatis setiap push (Sangat ringan)
 k6-performance-test:
   stage: performance-test
   image: 
@@ -74,46 +75,22 @@ k6-performance-test:
     - if: $CI_COMMIT_BRANCH == "main"
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
-# 2. Load Test: Hanya berjalan jika di-uncomment (Hapus tanda #)
-# k6-load-test:
-#   stage: performance-test
-#   image: 
-#     name: grafana/k6:latest
-#     entrypoint: [""]
-#   before_script: [] 
-#   script:
-#     - k6 run apps/backend/test/performance/load-test.js
-#   allow_failure: true 
-#   rules:
-#     - if: $CI_COMMIT_BRANCH == "main"
-#       when: manual # <--- Hanya berjalan jika diklik manual di UI GitLab
-
-# 3. Stress Test: Hanya berjalan jika di-uncomment (Hapus tanda #)
-# k6-stress-test:
-#   stage: performance-test
-#   image: 
-#     name: grafana/k6:latest
-#     entrypoint: [""]
-#   before_script: [] 
-#   script:
-#     - k6 run apps/backend/test/performance/stress-test.js
-#   allow_failure: true 
-#   rules:
-#     - if: $CI_COMMIT_BRANCH == "main"
-#       when: manual # <--- Hanya berjalan jika diklik manual di UI GitLab
-
 # ------------------------------------------------------------
-# LINT
+# LINT (Backend & Frontend)
 # ------------------------------------------------------------
 lint:
   stage: lint
   needs: [build]
   script:
     - pnpm install --frozen-lockfile
+    # Lint Backend
     - cd apps/backend && pnpm exec oxlint --format=gitlab > gl-code-quality-report.json || true
+    # Lint Frontend
+    - cd ../frontend && pnpm exec oxlint --format=gitlab > ../backend/gl-code-quality-report-frontend.json || true
   artifacts:
     reports:
-      codequality: apps/backend/gl-code-quality-report.json
+      # GitLab akan membaca file JSON dari backend
+      codequality: apps/backend/gl-code-quality-report.json 
   allow_failure: true
 
 # ------------------------------------------------------------
@@ -134,6 +111,7 @@ sonarqube-check:
     paths:
       - .sonar/cache
   script:
+    # Jika Anda memindahkan sonar-project.properties ke root, hapus 'cd apps/backend'
     - cd apps/backend
     - sonar-scanner
   allow_failure: true 
@@ -149,7 +127,7 @@ semgrep-sast:
   before_script: []
 
 # ------------------------------------------------------------
-# DEPLOY (Otomatis ke Server ASUS via SSH)
+# DEPLOY (Backend ke Systemd, Frontend ke Nginx)
 # ------------------------------------------------------------
 deploy:
   stage: deploy
@@ -176,15 +154,19 @@ deploy:
       JWT_EXPIRES_IN=$JWT_EXPIRES_IN
       EOF
       
-    # 2. Kirim file backend ke server
+    # --- DEPLOY BACKEND ---
+    - echo "Deploying Backend..."
     - ssh christian@192.168.100.42 "mkdir -p /var/lib/ksdas-backend/apps/backend"
     - rsync -avz --exclude='node_modules' --exclude='src' --exclude='test' --exclude='.turbo' apps/backend/ christian@192.168.100.42:/var/lib/ksdas-backend/apps/backend/
     - rsync -avz package.json pnpm-lock.yaml pnpm-workspace.yaml christian@192.168.100.42:/var/lib/ksdas-backend/
-    
-    # 3. Kirim file .env ke server
     - rsync -avz .env christian@192.168.100.42:/var/lib/ksdas-backend/.env
-    
-    # 4. Install dependensi dan restart service
     - ssh christian@192.168.100.42 "cd /var/lib/ksdas-backend && corepack pnpm install --prod --frozen-lockfile && sudo systemctl restart ksdas-backend"
+
+    # --- DEPLOY FRONTEND ---
+    - echo "Deploying Frontend..."
+    - ssh christian@192.168.100.42 "mkdir -p /var/www/ksdas-frontend"
+    # Flag --delete akan menghapus file lama di server jika tidak ada di hasil build baru
+    - rsync -avz --delete apps/frontend/dist/ christian@192.168.100.42:/var/www/ksdas-frontend/
+    
   rules:
     - if: $CI_COMMIT_BRANCH == "main"

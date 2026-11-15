@@ -6,6 +6,10 @@
       "outputs": ["dist/**"]
     },
     "test": {},
-    "lint": {}
+    "lint": {},
+    "dev": {
+      "cache": false,
+      "persistent": true
+    }
   }
 }
