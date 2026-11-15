@@ -52,7 +52,8 @@ k6-performance-test:
     entrypoint: [""]
   before_script: [] 
   script:
-    - k6 run --summary-export=k6-summary.json apps/backend/tests/performance/smoke-test.js
+    # Path diperbaiki: 'test' bukan 'tests'
+    - k6 run --summary-export=k6-summary.json apps/backend/test/performance/smoke-test.js
   allow_failure: true 
   artifacts:
     when: always
@@ -89,7 +90,6 @@ sonarqube-check:
     paths:
       - .sonar/cache
   script:
-    # <--- UBAH DISINI: Masuk ke folder backend sebelum menjalankan scanner
     - cd apps/backend
     - sonar-scanner
   allow_failure: true 
