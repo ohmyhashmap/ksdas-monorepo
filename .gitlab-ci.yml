@@ -2,11 +2,12 @@ stages:
   - install
   - build
   - test
+  - performance-test
   - lint
   - sonarqube-check
 
 # ------------------------------------------------------------
-# GitLab SAST (Static Application Security Testing)
+# GitLab SAST
 # ------------------------------------------------------------
 include:
   - template: Security/SAST.gitlab-ci.yml
@@ -60,11 +61,31 @@ test:
   artifacts:
     when: always
     paths:
-      - apps/backend/coverage/
+      - apps/backend/coverage/ # Laporan coverage ini yang akan dibaca SonarQube
     expire_in: 1 week
 
 # ------------------------------------------------------------
-# lint (Menggunakan oxlint dengan format Code Quality GitLab)
+# k6 Performance Test
+# ------------------------------------------------------------
+k6-performance-test:
+  stage: performance-test
+  image: 
+    name: grafana/k6:latest
+    entrypoint: [""]
+  script:
+    - k6 run --summary-export=k6-summary.json apps/backend/tests/performance/smoke-test.js
+  allow_failure: true # <--- TAMBAHKAN INI (Agar tidak menggagalkan pipeline jika backend belum nyala)
+  artifacts:
+    when: always
+    paths:
+      - k6-summary.json
+    expire_in: 1 week
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+# ------------------------------------------------------------
+# lint
 # ------------------------------------------------------------
 lint:
   stage: lint
@@ -78,11 +99,12 @@ lint:
   allow_failure: true
 
 # ------------------------------------------------------------
-# sonarqube-check (Akan otomatis di-skip jika SONAR_TOKEN kosong)
+# sonarqube-check
 # ------------------------------------------------------------
 sonarqube-check:
   stage: sonarqube-check
-  needs: [build]
+  # <--- UBAH DISINI: Butuh 'test' agar bisa mengambil file coverage
+  needs: [build, test] 
   image:
     name: sonarsource/sonar-scanner-cli:latest
     entrypoint: [""]
@@ -102,8 +124,7 @@ sonarqube-check:
     - when: never
 
 # ------------------------------------------------------------
-# Override untuk GitLab SAST agar tidak menjalankan before_script global
-# (Karena image Semgrep tidak memiliki corepack/Node.js)
+# Override untuk GitLab SAST
 # ------------------------------------------------------------
 semgrep-sast:
   before_script: []
