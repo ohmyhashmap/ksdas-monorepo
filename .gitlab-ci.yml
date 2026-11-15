@@ -4,6 +4,7 @@ stages:
   - performance-test
   - lint
   - sonarqube-check
+  - deploy
 
 include:
   - template: Security/SAST.gitlab-ci.yml
@@ -22,6 +23,9 @@ default:
       - .pnpm-store/
       - .turbo/
 
+# ------------------------------------------------------------
+# BUILD
+# ------------------------------------------------------------
 build:
   stage: build
   script:
@@ -32,6 +36,9 @@ build:
       - apps/backend/dist/
     expire_in: 1 day
 
+# ------------------------------------------------------------
+# TEST
+# ------------------------------------------------------------
 test:
   stage: test
   needs: [build]
@@ -45,6 +52,10 @@ test:
       - apps/backend/coverage/
     expire_in: 1 week
 
+# ------------------------------------------------------------
+# PERFORMANCE TEST (k6)
+# ------------------------------------------------------------
+# 1. Smoke Test: Berjalan otomatis setiap push (Sangat ringan)
 k6-performance-test:
   stage: performance-test
   image: 
@@ -52,7 +63,6 @@ k6-performance-test:
     entrypoint: [""]
   before_script: [] 
   script:
-    # Path diperbaiki: 'test' bukan 'tests'
     - k6 run --summary-export=k6-summary.json apps/backend/test/performance/smoke-test.js
   allow_failure: true 
   artifacts:
@@ -64,6 +74,37 @@ k6-performance-test:
     - if: $CI_COMMIT_BRANCH == "main"
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
+# 2. Load Test: Hanya berjalan jika di-uncomment (Hapus tanda #)
+# k6-load-test:
+#   stage: performance-test
+#   image: 
+#     name: grafana/k6:latest
+#     entrypoint: [""]
+#   before_script: [] 
+#   script:
+#     - k6 run apps/backend/test/performance/load-test.js
+#   allow_failure: true 
+#   rules:
+#     - if: $CI_COMMIT_BRANCH == "main"
+#       when: manual # <--- Hanya berjalan jika diklik manual di UI GitLab
+
+# 3. Stress Test: Hanya berjalan jika di-uncomment (Hapus tanda #)
+# k6-stress-test:
+#   stage: performance-test
+#   image: 
+#     name: grafana/k6:latest
+#     entrypoint: [""]
+#   before_script: [] 
+#   script:
+#     - k6 run apps/backend/test/performance/stress-test.js
+#   allow_failure: true 
+#   rules:
+#     - if: $CI_COMMIT_BRANCH == "main"
+#       when: manual # <--- Hanya berjalan jika diklik manual di UI GitLab
+
+# ------------------------------------------------------------
+# LINT
+# ------------------------------------------------------------
 lint:
   stage: lint
   needs: [build]
@@ -75,6 +116,9 @@ lint:
       codequality: apps/backend/gl-code-quality-report.json
   allow_failure: true
 
+# ------------------------------------------------------------
+# SONARQUBE
+# ------------------------------------------------------------
 sonarqube-check:
   stage: sonarqube-check
   needs: [build, test]
@@ -98,5 +142,31 @@ sonarqube-check:
       when: always
     - when: never
 
+# ------------------------------------------------------------
+# OVERRIDE SAST
+# ------------------------------------------------------------
 semgrep-sast:
   before_script: []
+
+# ------------------------------------------------------------
+# DEPLOY (Otomatis ke Server ASUS via SSH)
+# ------------------------------------------------------------
+deploy:
+  stage: deploy
+  image: alpine:latest
+  needs: [build, test]
+  before_script:
+    - apk add --no-cache openssh-client rsync
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -H 192.168.100.42 >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - ssh christian@192.168.100.42 "mkdir -p /var/lib/ksdas-backend/apps/backend"
+    - rsync -avz --exclude='node_modules' --exclude='src' --exclude='test' --exclude='.turbo' apps/backend/ christian@192.168.100.42:/var/lib/ksdas-backend/apps/backend/
+    - rsync -avz package.json pnpm-lock.yaml pnpm-workspace.yaml christian@192.168.100.42:/var/lib/ksdas-backend/
+    - ssh christian@192.168.100.42 "cd /var/lib/ksdas-backend && corepack pnpm install --prod --frozen-lockfile && sudo systemctl restart ksdas-backend"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
