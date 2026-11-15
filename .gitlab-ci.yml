@@ -1,14 +1,10 @@
 stages:
-  - install
   - build
   - test
   - performance-test
   - lint
   - sonarqube-check
 
-# ------------------------------------------------------------
-# GitLab SAST
-# ------------------------------------------------------------
 include:
   - template: Security/SAST.gitlab-ci.yml
 
@@ -26,20 +22,8 @@ default:
       - .pnpm-store/
       - .turbo/
 
-# ------------------------------------------------------------
-# install
-# ------------------------------------------------------------
-install:
-  stage: install
-  script:
-    - pnpm install --frozen-lockfile
-
-# ------------------------------------------------------------
-# build
-# ------------------------------------------------------------
 build:
   stage: build
-  needs: [install]
   script:
     - pnpm install --frozen-lockfile
     - pnpm turbo run build --filter=backend
@@ -48,12 +32,9 @@ build:
       - apps/backend/dist/
     expire_in: 1 day
 
-# ------------------------------------------------------------
-# test
-# ------------------------------------------------------------
 test:
   stage: test
-  needs: [install]
+  needs: [build]
   script:
     - pnpm install --frozen-lockfile
     - pnpm --filter backend test:cov
@@ -61,20 +42,18 @@ test:
   artifacts:
     when: always
     paths:
-      - apps/backend/coverage/ # Laporan coverage ini yang akan dibaca SonarQube
+      - apps/backend/coverage/
     expire_in: 1 week
 
-# ------------------------------------------------------------
-# k6 Performance Test
-# ------------------------------------------------------------
 k6-performance-test:
   stage: performance-test
   image: 
     name: grafana/k6:latest
     entrypoint: [""]
+  before_script: [] 
   script:
     - k6 run --summary-export=k6-summary.json apps/backend/tests/performance/smoke-test.js
-  allow_failure: true # <--- TAMBAHKAN INI (Agar tidak menggagalkan pipeline jika backend belum nyala)
+  allow_failure: true 
   artifacts:
     when: always
     paths:
@@ -84,12 +63,9 @@ k6-performance-test:
     - if: $CI_COMMIT_BRANCH == "main"
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
-# ------------------------------------------------------------
-# lint
-# ------------------------------------------------------------
 lint:
   stage: lint
-  needs: [install]
+  needs: [build]
   script:
     - pnpm install --frozen-lockfile
     - cd apps/backend && pnpm exec oxlint --format=gitlab > gl-code-quality-report.json || true
@@ -98,16 +74,13 @@ lint:
       codequality: apps/backend/gl-code-quality-report.json
   allow_failure: true
 
-# ------------------------------------------------------------
-# sonarqube-check
-# ------------------------------------------------------------
 sonarqube-check:
   stage: sonarqube-check
-  # <--- UBAH DISINI: Butuh 'test' agar bisa mengambil file coverage
-  needs: [build, test] 
+  needs: [build, test]
   image:
     name: sonarsource/sonar-scanner-cli:latest
     entrypoint: [""]
+  before_script: []
   variables:
     SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
     GIT_DEPTH: "0"
@@ -116,15 +89,14 @@ sonarqube-check:
     paths:
       - .sonar/cache
   script:
+    # <--- UBAH DISINI: Masuk ke folder backend sebelum menjalankan scanner
+    - cd apps/backend
     - sonar-scanner
-  allow_failure: true
+  allow_failure: true 
   rules:
     - if: $SONAR_TOKEN
       when: always
     - when: never
 
-# ------------------------------------------------------------
-# Override untuk GitLab SAST
-# ------------------------------------------------------------
 semgrep-sast:
   before_script: []
