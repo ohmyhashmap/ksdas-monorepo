@@ -26,4 +26,5 @@ Thumbs.db
 .vscode/
 
 # misc
-*.tsbuildinfodeploy_key*
+*.tsbuildinfo
+deploy_key*
