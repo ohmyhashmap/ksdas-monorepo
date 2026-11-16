@@ -7,18 +7,18 @@ Sistem Manajemen Dokumen Kerja Sama (MoU/PKS/IA) untuk Biro Kerja Sama IT Del.
 
 ## 👥 Tim Pengembang
 
-**Kelompok 1**
+### Kelompok 1
 
 * Yogi Panjaitan (`11S24023`)
 * Rivaldi Siahaan (`11S240`)
 * Martha Nababan (`11S240`)
 
-**Kelompok 2**
+### Kelompok 2
 
 * Dimas Rexan Sidabutar (`11S240`)
 * Panji Ananda Lumbantoruan (`11S240`)
 
-**Kelompok 3**
+### Kelompok 3
 
 * Christian Alberto Sitohang (`11S24039`)
 * Gideon Benedictus Panjaitan (`11S24036`)
@@ -42,12 +42,12 @@ Proyek ini memenuhi luaran dari 5 mata kuliah:
 
 Proyek ini tidak hanya berjalan di `localhost`, melainkan dideploy secara otomatis ke **Server Mandiri (NixOS)** yang dilengkapi dengan sistem keamanan dan CI/CD kelas *Enterprise*:
 
-*   **GitLab CE (Self-Hosted):** Manajemen repositori & CI/CD.
-*   **GitLab Runner:** Eksekutor pipeline menggunakan *Podman*.
-*   **SonarQube:** Analisis kualitas kode dan keamanan (SAST).
-*   **Nginx:** Reverse Proxy & Web Server untuk Frontend.
-*   **Tailscale:** Akses jaringan privat (Zero-Trust) tanpa membuka port publik.
-*   **PostgreSQL 17 & Redis:** Database & Caching.
+* **GitLab CE (Self-Hosted):** Manajemen repositori & CI/CD.
+* **GitLab Runner:** Eksekutor pipeline menggunakan *Podman*.
+* **SonarQube:** Analisis kualitas kode dan keamanan (SAST).
+* **Nginx:** Reverse Proxy & Web Server untuk Frontend.
+* **Tailscale:** Akses jaringan privat (Zero-Trust) tanpa membuka port publik.
+* **PostgreSQL 17 & Redis:** Database & Caching.
 
 ---
 
@@ -60,7 +60,7 @@ Aplikasi ini sudah dideploy dan dapat diakses melalui jaringan lokal (Wi-Fi yang
 | **Frontend (React)** | `http://ksdas.local` | `http://100.115.107.40` |
 | **Backend Swagger** | `http://ksdas.local/api/docs` | `http://100.115.107.40/api/docs` |
 | **GitLab Repositori** | `http://gitlab.local` | `https://asus.hippocampus-hue.ts.net` |
-| **SonarQube Dashboard**| `http://sonar.local:9000` | `http://100.115.107.40:9000` |
+| **SonarQube Dashboard** | `http://sonar.local:9000` | `http://100.115.107.40:9000` |
 
 ---
 
@@ -68,24 +68,24 @@ Aplikasi ini sudah dideploy dan dapat diakses melalui jaringan lokal (Wi-Fi yang
 
 Setiap kali Anda melakukan `git push origin main`, pipeline GitLab akan otomatis menjalankan:
 
-1.  **Build:** Mengompilasi Backend (NestJS) & Frontend (React).
-2.  **Test:** Menjalankan Unit Test (Jest) dan Load Test (k6).
-3.  **Lint:** Memeriksa gaya penulisan kode (Oxlint).
-4.  **SonarQube:** Mengirim laporan analisis *Code Smell*, *Bugs*, dan *Coverage*.
-5.  **Deploy (CD):**
-    *   Menyalin hasil build Frontend ke direktori Nginx (`/var/www/ksdas-frontend`).
-    *   Menyalin kode Backend ke `/var/lib/ksdas-backend` dan me-restart service via SSH.
+1. **Build:** Mengompilasi Backend (NestJS) & Frontend (React).
+2. **Test:** Menjalankan Unit Test (Jest) dan Load Test (k6).
+3. **Lint:** Memeriksa gaya penulisan kode (Oxlint).
+4. **SonarQube:** Mengirim laporan analisis *Code Smell*, *Bugs*, dan *Coverage*.
+5. **Deploy (CD):**
+    * Menyalin hasil build Frontend ke direktori Nginx (`/var/www/ksdas-frontend`).
+    * Menyalin kode Backend ke `/var/lib/ksdas-backend` dan me-restart service via SSH.
 
 ---
 
 ## 🛠️ Tech Stack
 
-*   **Frontend:** React, Vite, TypeScript.
-*   **Backend:** Node.js, NestJS, TypeORM, PostgreSQL.
-*   **Keamanan (Kripto):** JWT, `bcryptjs`, Helmet, Role-Based Access Control (RBAC).
-*   **Database & Storage:** PostgreSQL 17, Redis, MinIO.
-*   **DevOps:** NixOS, GitLab, Podman, SonarQube, Tailscale.
-*   **Tools:** pnpm, Turborepo, Docker, DBeaver, Swagger.
+* **Frontend:** React, Vite, TypeScript.
+* **Backend:** Node.js, NestJS, TypeORM, PostgreSQL.
+* **Keamanan (Kripto):** JWT, `bcryptjs`, Helmet, Role-Based Access Control (RBAC).
+* **Database & Storage:** PostgreSQL 17, Redis, MinIO.
+* **DevOps:** NixOS, GitLab, Podman, SonarQube, Tailscale.
+* **Tools:** pnpm, Turborepo, Docker, DBeaver, Swagger.
 
 ---
 
@@ -93,31 +93,39 @@ Setiap kali Anda melakukan `git push origin main`, pipeline GitLab akan otomatis
 
 ### Prasyarat
 
-*   Node.js (v22+)
-*   `pnpm`
-*   Docker Desktop
+* Node.js (v22+)
+* `pnpm`
+* Docker Desktop
 
 ### Langkah-langkah
 
-1.  **Clone Repositori**
+1. **Clone Repositori**
+
     ```bash
     git clone https://github.com/ohmyhashmap/ksdas-monorepo.git
     cd ksdas-monorepo
     ```
-2.  **Install Dependensi**
+
+2. **Install Dependensi**
+
     ```bash
     pnpm install
     ```
-3.  **Nyalakan Database & Storage**
+
+3. **Nyalakan Database & Storage**
+
     ```bash
     docker compose up -d
     ```
-4.  **Jalankan Backend & Frontend (Bersamaan)**
+
+4. **Jalankan Backend & Frontend (Bersamaan)**
+
     ```bash
     pnpm turbo run dev
     ```
-    *   Frontend: `http://localhost:5173`
-    *   Backend (Swagger): `http://localhost:3000/api/docs`
+
+    * Frontend: `http://localhost:5173`
+    * Backend (Swagger): `http://localhost:3000/api/docs`
 
 ---
 
@@ -139,15 +147,3 @@ Sesuai Panduan Proyek Kolaborasi, penggunaan *tools* pihak ketiga dan AI dicantu
 
 * **AI Assistant:** Digunakan untuk *pair-programming* (NestJS), membantu *debugging* konfigurasi DevOps (NixOS/Docker/GitLab CI), dan menyusun dokumentasi API.
 * **Open Source:** NestJS, React, TypeORM, Passport-JWT, Swagger UI, SonarQube, GitLab CE (MIT License).
-
-
-
-### 🚀 Langkah Selanjutnya
-Jalankan perintah ini di laptop Anda untuk memperbarui repositori GitLab:
-```bash
-git add README.md
-git commit -m "docs: update README with DevSecOps infrastructure and frontend status"
-git push origin main
-```
-
-Setelah di-push, buka halaman proyek di GitLab (`http://gitlab.local/root/ksdas-monorepo`). Dosen atau teman tim Anda yang membuka repositori tersebut akan langsung melihat betapa *advanced*-nya sistem yang sudah Anda bangun! Luar biasa! 🎓🚀
